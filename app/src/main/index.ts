@@ -62,12 +62,12 @@ app.whenReady().then(() => {
   const change = () => {
     if (mainWindow.isMaximized()) {
       mainWindow.unmaximize();
-      mainWindow.setSize(900, 670)
+      mainWindow.setSize(900, 670);
       mainWindow.center();
     } else {
       mainWindow.maximize();
     }
-  }
+  };
 
   ipcMain.on("change-window", () => change());
 });

@@ -12,8 +12,17 @@ export interface Request {
   id: string;
   url: string;
   method: string;
-  color: string
+  body: string;
+  color: string;
 }
+
+export const nullRequest = {
+  id: "0",
+  url: "",
+  method: "get",
+  body: "",
+  color: "text-green-600 bg-transparent focus:ring-0"
+};
 
 interface RequestContextType {
   currentRequest: Request;
@@ -34,12 +43,7 @@ export const useRequestContext = () => {
 
 export const RequestProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [requests, setRequests] = useState<Request[]>([]);
-  const [currentRequest, setCurrentRequest] = useState<Request>({
-    id: "0",
-    url: "",
-    method: "get",
-    color: "text-green-600 bg-transparent focus:ring-0"
-  });
+  const [currentRequest, setCurrentRequest] = useState<Request>({ ...nullRequest });
 
   return (
     <RequestContext.Provider value={{ currentRequest, setCurrentRequest, requests, setRequests }}>

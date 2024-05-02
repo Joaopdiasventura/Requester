@@ -12,6 +12,7 @@ export function MainComponent(): JSX.Element {
   const [statusCode, setStatus] = useState<string>("");
   const [valid, setValid] = useState<boolean>(false);
   const [statusColor, setStatusColor] = useState<string>("");
+  const [cursorPosition, setCursorPosition] = useState<number>(0);
 
   const { currentRequest, setCurrentRequest, requests, setRequests } = useRequestContext();
 
@@ -152,15 +153,56 @@ export function MainComponent(): JSX.Element {
     }
   };
 
+  let bodyLength = 0;
   const verifyJson = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const jsonString = event.target.value;
+    let jsonString = event.target.value;
+    const { selectionStart } = event.target;
+
+    if (bodyLength < jsonString.length) {
+      if (jsonString[selectionStart - 1] == "{") {
+        jsonString = jsonString.slice(0, selectionStart) + "}" + jsonString.slice(selectionStart);
+      } else if (jsonString[selectionStart - 1] == `"`) {
+        jsonString = jsonString.slice(0, selectionStart) + `"` + jsonString.slice(selectionStart);
+      }
+    }
     try {
-      JSON.parse(jsonString);
+      const data = JSON.parse(jsonString);
+      setValid(true);
+      jsonString = JSON.stringify(data, null, 2);
       setValid(true);
     } catch (error) {
       setValid(false);
+    } finally {
+      event.target.setSelectionRange(selectionStart, selectionStart);
+
+      setCursorPosition(selectionStart);
+      const updatedRequest = {
+        ...currentRequest,
+        body: jsonString
+      };
+
+      localStorage.setItem("currentRequest", JSON.stringify(updatedRequest));
+      setCurrentRequest(updatedRequest);
+
+      const allRequest = requests;
+
+      for (let i = 0; i < allRequest.length; i++) {
+        if (allRequest[i].id == updatedRequest.id) {
+          allRequest[i] = { ...updatedRequest };
+          break;
+        }
+      }
+      localStorage.setItem("requests", JSON.stringify(allRequest));
+      setRequests(allRequest);
     }
   };
+
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.focus(); // Força o foco
+      bodyRef.current.setSelectionRange(cursorPosition, cursorPosition);
+    }
+  }, [currentRequest.body, cursorPosition]); // Garante que essas ações ocorram após as atualizações relevantes
 
   useEffect(() => {
     const allRequests = localStorage.getItem("requests");
@@ -206,6 +248,7 @@ export function MainComponent(): JSX.Element {
             cols={30}
             rows={10}
             ref={bodyRef}
+            value={currentRequest.body}
             onChange={verifyJson}
             className="w-full h-full border border-white/20 select-text rounded-lg bg-transparent focus:ring-0 flex-1 outline-none p-1 text-sm"
           ></textarea>

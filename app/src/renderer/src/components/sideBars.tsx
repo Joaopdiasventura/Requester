@@ -1,4 +1,4 @@
-import { useRequestContext, Request } from "../contexts/requests";
+import { useRequestContext, Request, nullRequest } from "../contexts/requests";
 
 export function SideBar(): JSX.Element {
   const { setCurrentRequest, requests, setRequests } = useRequestContext();
@@ -14,6 +14,7 @@ export function SideBar(): JSX.Element {
       id: generateId(),
       url: "",
       method: "get",
+      body: "",
       color: "text-green-600 bg-transparent focus:ring-0"
     };
 
@@ -31,14 +32,15 @@ export function SideBar(): JSX.Element {
   };
 
   const deleteRequest = (id: string) => {
+    const requestIndex = requests.findIndex((request: Request) => request.id == id);
+
     const newRequests = requests.filter((request) => request.id != id);
+    const currentRequest = newRequests[requestIndex] ||
+      newRequests[requestIndex - 1] || { ...nullRequest };
     setRequests(newRequests);
-    setCurrentRequest({
-      id: "0",
-      url: "",
-      method: "get",
-      color: "text-green-600 bg-transparent focus:ring-0"
-    });
+    setCurrentRequest(currentRequest);
+    localStorage.setItem("requests", JSON.stringify(newRequests));
+    localStorage.setItem("currentRequest", JSON.stringify(currentRequest));
   };
 
   return (
