@@ -1,15 +1,19 @@
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { TailSpin } from "react-loader-spinner";
 import { SelectMethodComponent } from "./selectMethod";
-import { Delete, Get, Patch, Post, Put } from "../requests";
-import { ChangeEvent, FormEvent, Fragment, useEffect, useRef, useState } from "react";
+import { Send } from "../requests";
 import { useRequestContext } from "../contexts/requests";
 
 export function MainComponent(): JSX.Element {
+  const send = new Send();
+
   const urlRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<string>("");
   const [statusCode, setStatus] = useState<string>("");
+  const [bodyLength, setLength] = useState<number>(0);
   const [valid, setValid] = useState<boolean>(false);
   const [statusColor, setStatusColor] = useState<string>("");
   const [cursorPosition, setCursorPosition] = useState<number>(0);
@@ -35,8 +39,6 @@ export function MainComponent(): JSX.Element {
     localStorage.setItem("currentRequest", JSON.stringify(updatedRequest));
     setCurrentRequest(updatedRequest);
 
-    console.log(currentRequest);
-
     const allRequest = requests;
 
     for (let i = 0; i < allRequest.length; i++) {
@@ -60,8 +62,6 @@ export function MainComponent(): JSX.Element {
 
     setCurrentRequest(updatedRequest);
 
-    console.log(currentRequest);
-
     const allRequest = requests;
 
     for (let i = 0; i < allRequest.length; i++) {
@@ -71,7 +71,6 @@ export function MainComponent(): JSX.Element {
       }
     }
 
-    console.log(allRequest);
     localStorage.setItem("requests", JSON.stringify(allRequest));
 
     setRequests(allRequest);
@@ -82,52 +81,28 @@ export function MainComponent(): JSX.Element {
     const url = urlRef.current != null ? urlRef.current.value : "";
     const body = bodyRef.current != null ? bodyRef.current.value : "";
     const method = currentRequest.method;
-    console.log(method);
 
     let result: any;
     setIsLoading(true);
     try {
-      switch (method) {
-        case "get":
-          result = await Get(url);
-          break;
-        case "delete":
-          result = await Delete(url);
-          break;
-        case "post":
-          if (!valid) {
-            return;
-          }
-          result = await Post(url, JSON.parse(body));
-          break;
-        case "put":
-          if (!valid) {
-            return;
-          }
-          result = await Put(url, JSON.parse(body));
-          break;
-        case "patch":
-          if (!valid) {
-            return;
-          }
-          result = await Patch(url, JSON.parse(body));
-          break;
+      if (method == "get" || method == "delete") {
+        result = await send[method](url);
+      } else {
+        if (valid) {
+          result = await send[method](url, JSON.parse(body));
+        }
       }
-
-      console.log(result);
       const { data } = result;
       const { status } = result;
       changeColor(`${status}`);
       setStatus(`${status}`);
       setResponse(JSON.stringify(data, null, 2));
-      console.log(response);
     } catch (error) {
       const message =
         (error as any).response?.data != undefined
           ? JSON.stringify((error as any).response.data, null, 2)
           : (error as any).message;
 
-      console.log(message);
       if (message == "Network Error") {
         setResponse("URL INVÁLIDA");
         setStatus("400");
@@ -152,8 +127,6 @@ export function MainComponent(): JSX.Element {
       setStatusColor("text-red-700");
     }
   };
-
-  let bodyLength = 0;
   const verifyJson = (event: ChangeEvent<HTMLTextAreaElement>) => {
     let jsonString = event.target.value;
     const { selectionStart } = event.target;
@@ -165,6 +138,7 @@ export function MainComponent(): JSX.Element {
         jsonString = jsonString.slice(0, selectionStart) + `"` + jsonString.slice(selectionStart);
       }
     }
+    setLength(jsonString.length);
     try {
       const data = JSON.parse(jsonString);
       setValid(true);
@@ -199,10 +173,10 @@ export function MainComponent(): JSX.Element {
 
   useEffect(() => {
     if (bodyRef.current) {
-      bodyRef.current.focus(); // Força o foco
+      bodyRef.current.focus();
       bodyRef.current.setSelectionRange(cursorPosition, cursorPosition);
     }
-  }, [currentRequest.body, cursorPosition]); // Garante que essas ações ocorram após as atualizações relevantes
+  }, [currentRequest.body, cursorPosition]);
 
   useEffect(() => {
     const allRequests = localStorage.getItem("requests");
@@ -222,8 +196,11 @@ export function MainComponent(): JSX.Element {
   }, []);
 
   return (
-    <main className="border border-white/10 w-4/5 p-2">
-      <form className="w-full border border-white/10 flex items-center gap-3" onSubmit={doRequest}>
+    <main className="border flex flex-wrap border-white/10 w-4/5 gap-2 p-2">
+      <form
+        className="w-full border h-small border-white/10 flex items-center gap-3"
+        onSubmit={doRequest}
+      >
         <SelectMethodComponent
           value={currentRequest.method}
           onChange={changeMethod}
@@ -236,12 +213,13 @@ export function MainComponent(): JSX.Element {
           ref={urlRef}
           onChange={changeUrl}
           value={currentRequest.url}
+          spellCheck={false}
           required
         />
         <input type="submit" className="border border-white/10 p-1" value="SEND" />
       </form>
-      <div className="flex">
-        <div className="w-1/2 h-full m-2">
+      <div className="flex h-big w-full">
+        <div className="w-1/2 h-full flex items-center justify-center">
           <textarea
             name=""
             id=""
@@ -249,18 +227,23 @@ export function MainComponent(): JSX.Element {
             rows={10}
             ref={bodyRef}
             value={currentRequest.body}
+            spellCheck={false}
+            style={{ color: valid ? "white" : "#ff3838" }}
             onChange={verifyJson}
-            className="w-full h-full border border-white/20 select-text rounded-lg bg-transparent focus:ring-0 flex-1 outline-none p-1 text-sm"
+            className="w-full h-almost border border-white/20 select-text rounded-lg bg-transparent focus:ring-0 flex-1 outline-none p-1 text-sm"
           ></textarea>
         </div>
-        <div className="w-1/2 m-2 h-full" style={{ overflow: "auto" }}>
+        <div
+          className="w-1/2 m-2 h-full flex items-center justify-center flex-col"
+          style={{ overflow: "auto" }}
+        >
           {isLoading ? (
-            <p>Loading...</p>
+            <TailSpin color="#ff0000" height={80} width={80} />
           ) : (
-            <Fragment>
+            <>
               <p className={statusColor}>{statusCode}</p>
-              <pre className="flex break-words h-full max-w-full">{response}</pre>
-            </Fragment>
+              <pre className="flex flex-wrap break-words h-full max-w-full">{response}</pre>
+            </>
           )}
         </div>
       </div>

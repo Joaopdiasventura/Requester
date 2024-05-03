@@ -29,6 +29,7 @@ mac:
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
+  icon: ./build/icon.png
   target:
     - AppImage
     - snap

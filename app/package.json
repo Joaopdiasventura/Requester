@@ -1,6 +1,6 @@
 {
   "name": "requester",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "joaopdiasventura@gmail.com",
@@ -24,7 +24,8 @@
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
     "axios": "^1.6.8",
-    "electron-updater": "^6.1.7"
+    "electron-updater": "^6.1.7",
+    "react-loader-spinner": "^6.1.6"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^2.0.0",

@@ -21,7 +21,6 @@ export function SideBar(): JSX.Element {
     const updatedRequests = [newRequest, ...requests];
     setRequests(updatedRequests);
     localStorage.setItem("requests", JSON.stringify(updatedRequests));
-    console.log(localStorage.getItem("requests"));
     localStorage.setItem("currentRequest", JSON.stringify(newRequest));
     setCurrentRequest(newRequest);
   };
