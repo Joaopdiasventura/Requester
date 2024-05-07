@@ -13,7 +13,7 @@ export function DownloadButton() {
 
     if (platform.startsWith("Win")) {
       url =
-        "https://joaopdiasventura.github.io/Requester/web-site/src/assets/Requester.zip";
+        "https://joaopdiasventura.github.io/Requester/web-site/src/assets/requester-1.0.2-setup.zip";
     } else {
       url =
         "https://joaopdiasventura.github.io/Requester/web-site/src/assets/requester_1.0.1_amd64.zip";
