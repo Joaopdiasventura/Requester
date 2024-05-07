@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://joaopdiasventura.github.io/Requester/app/build/icon.png"/>
+  <img src="https://joaopdiasventura.github.io/Requester/app/resources/icon.png"/>
 </p>
 
 <h1 align="center"> Requester</h1> <br/>
